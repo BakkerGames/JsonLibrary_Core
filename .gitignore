@@ -1,0 +1,8 @@
+.*
+!.gitignore
+*.dll
+*.exe
+bin/
+obj/
+packages/
+TestResults/
