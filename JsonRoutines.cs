@@ -303,7 +303,7 @@ namespace JsonLibrary
             {
                 return value;
             }
-            if (value.StartsWith('.'))
+            if (value.StartsWith("."))
             {
                 // Cover leading decimal place
                 value = '0' + value;
@@ -722,7 +722,7 @@ namespace JsonLibrary
             if (value.Contains("/")) return false;
             if (value.Contains("-")) return false;
             // Try to convert using a dummy date
-            if (DateTime.TryParse($"{DateTime.MinValue:yyyy-MM-dd} {value}", out DateTime tempValue))
+            if (DateTime.TryParse($"{DateTime.MinValue:yyyy-MM-dd} {value}", out _))
             {
                 return true;
             }
@@ -735,7 +735,7 @@ namespace JsonLibrary
             // Author : Scott Bakker
             // Created: 02/19/2020
             if (value == null || value.Length == 0) return false;
-            if (DateTime.TryParse(value, out DateTime tempValue))
+            if (DateTime.TryParse(value, out _))
             {
                 return true;
             }
@@ -753,7 +753,7 @@ namespace JsonLibrary
             {
                 return false;
             }
-            if (DateTimeOffset.TryParse(value, out DateTimeOffset tempValue))
+            if (DateTimeOffset.TryParse(value, out _))
             {
                 return true;
             }

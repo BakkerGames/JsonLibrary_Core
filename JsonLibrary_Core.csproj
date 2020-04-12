@@ -4,8 +4,8 @@
 		<TargetFramework>netcoreapp3.1</TargetFramework>
 	</PropertyGroup>
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'">
-		<Exec Command="copy /y $(OutDir)$(TargetName).dll C:\Projects\EXE" />
-		<Exec Command="copy /y $(OutDir)$(TargetName).pdb C:\Projects\EXE" />
+		<Exec Command="xcopy /y /d $(OutDir)$(TargetName).dll C:\Projects\EXE" />
+		<Exec Command="xcopy /y /d $(OutDir)$(TargetName).pdb C:\Projects\EXE" />
 	</Target>
 	
 </Project>
