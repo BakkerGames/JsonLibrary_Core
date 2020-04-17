@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a JSON Array class
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 04/06/2020
+// LastMod: 04/17/2020
 
 // Notes  : The values in the list ARE ordered based on when they are added.
 //          The values are NOT sorted, and there can be duplicates.
@@ -11,6 +11,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace JsonLibrary
@@ -27,13 +28,13 @@ namespace JsonLibrary
             _data = new List<object>();
         }
 
-        public JArray(IEnumerable list)
+        public JArray(JArray ja)
         {
-            // Purpose: Create new JArray object with values
+            // Purpose: Create new JArray object from an existing JArray
             // Author : Scott Bakker
             // Created: 09/13/2019
             _data = new List<object>();
-            Append(list);
+            this.Append(ja);
         }
 
         public IEnumerator<object> GetEnumerator()
@@ -230,55 +231,64 @@ namespace JsonLibrary
             // Purpose: Convert a string into a JArray
             // Author : Scott Bakker
             // Created: 09/13/2019
-            int pos = 0;
-            return Parse(value, ref pos);
+            // LastMod: 04/17/2020
+            return Parse(new CharReader(value));
         }
 
-        internal static JArray Parse(string value, ref int pos)
+        public static JArray Parse(TextReader textReader)
+        {
+            // Purpose: Convert a TextReader stream into a JArray
+            // Author : Scott Bakker
+            // Created: 04/17/2020
+            return Parse(new CharReader(textReader));
+        }
+
+        internal static JArray Parse(CharReader reader)
         {
             // Purpose: Convert a partial string into a JArray
             // Author : Scott Bakker
             // Created: 09/13/2019
-            if (value == null || value.Length == 0)
+            // LastMod: 04/17/2020
+            if (reader == null || reader.Peek() == -1)
             {
                 return null;
             }
             JArray result = new JArray();
-            JsonRoutines.SkipWhitespace(value, ref pos);
-            if (value[pos] != '[')
+            JsonRoutines.SkipWhitespace(reader);
+            if (reader.Peek() != '[')
             {
-                throw new SystemException($"JSON Error: Unexpected token to start JArray: {value[pos]}");
+                throw new SystemException($"JSON Error: Unexpected token to start JArray: {reader.Peek()}");
             }
-            pos++;
+            reader.Read();
             do
             {
-                JsonRoutines.SkipWhitespace(value, ref pos);
+                JsonRoutines.SkipWhitespace(reader);
                 // check for symbols
-                if (value[pos] == ']')
+                if (reader.Peek() == ']')
                 {
-                    pos++;
+                    reader.Read();
                     break; // done building JArray
                 }
-                if (value[pos] == ',')
+                if (reader.Peek() == ',')
                 {
                     // this logic ignores extra commas, but is ok
-                    pos++;
+                    reader.Read();
                     continue; // next value
                 }
-                if (value[pos] == '{') // JObject
+                if (reader.Peek() == '{') // JObject
                 {
-                    JObject jo = JObject.Parse(value, ref pos);
+                    JObject jo = JObject.Parse(reader);
                     result.Add(jo);
                     continue;
                 }
-                if (value[pos] == '[') // JArray
+                if (reader.Peek() == '[') // JArray
                 {
-                    JArray ja = JArray.Parse(value, ref pos);
+                    JArray ja = JArray.Parse(reader);
                     result.Add(ja);
                     continue;
                 }
                 // Get value as a string, convert to object
-                string tempValue = JsonRoutines.GetToken(value, ref pos);
+                string tempValue = JsonRoutines.GetToken(reader);
                 result.Add(JsonRoutines.JsonValueToObject(tempValue));
             } while (true);
             return result;

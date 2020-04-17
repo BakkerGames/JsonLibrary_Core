@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a JSON Object class
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 04/06/2020
+// LastMod: 04/17/2020
 
 // Notes  : The keys in this JObject implementation are case sensitive, so "abc" <> "ABC".
 //        : Keys cannot be null, empty, or contain only whitespace.
@@ -16,6 +16,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace JsonLibrary
@@ -34,11 +35,11 @@ namespace JsonLibrary
 
         public JObject(JObject jo)
         {
-            // Purpose: Create new JObject object with values
+            // Purpose: Create new JObject object
             // Author : Scott Bakker
             // Created: 09/13/2019
             _data = new Dictionary<string, object>();
-            Merge(jo);
+            this.Merge(jo);
         }
 
         public IEnumerator<string> GetEnumerator()
@@ -357,44 +358,53 @@ namespace JsonLibrary
             // Purpose: Convert a string into a JObject
             // Author : Scott Bakker
             // Created: 09/13/2019
-            int pos = 0;
-            return Parse(value, ref pos);
+            // LastMod: 04/17/2020
+            return Parse(new CharReader(value));
         }
 
-        internal static JObject Parse(string value, ref int pos)
+        public static JObject Parse(TextReader textReader)
+        {
+            // Purpose: Convert a TextReader stream into a JObject
+            // Author : Scott Bakker
+            // Created: 04/17/2020
+            return Parse(new CharReader(textReader));
+        }
+
+        internal static JObject Parse(CharReader reader)
         {
             // Purpose: Convert a partial string into a JObject
             // Author : Scott Bakker
             // Created: 09/13/2019
-            if (value == null || value.Length == 0)
+            // LastMod: 04/17/2020
+            if (reader == null || reader.Peek() == -1)
             {
                 return null;
             }
             JObject result = new JObject();
             string tempKey;
             string tempValue;
-            JsonRoutines.SkipWhitespace(value, ref pos);
-            if (value[pos] != '{')
+            JsonRoutines.SkipWhitespace(reader);
+            if (reader.Peek() != '{')
             {
-                throw new SystemException($"JSON Error: Unexpected token to start JObject: {value[pos]}");
+                throw new SystemException($"JSON Error: Unexpected token to start JObject: {reader.Peek()}");
             }
-            pos++;
+            reader.Read();
             do
             {
-                JsonRoutines.SkipWhitespace(value, ref pos);
+                JsonRoutines.SkipWhitespace(reader);
                 // check for symbols
-                if (value[pos] == '}')
+                if (reader.Peek() == '}')
                 {
-                    pos++;
+                    reader.Read();
                     break; // done building JObject
                 }
-                if (value[pos] == ',')
+                if (reader.Peek() == ',')
                 {
                     // this logic ignores extra commas, but is ok
-                    pos++;
+                    reader.Read();
                     continue; // Next key/value
                 }
-                tempKey = JsonRoutines.GetToken(value, ref pos);
+                tempKey = JsonRoutines.GetToken(reader);
                 if (JsonRoutines.IsWhitespaceString(tempKey))
                 {
                     throw new SystemException("JSON Error: Key cannot be null/empty/whitespace");
@@ -410,27 +420,27 @@ namespace JsonLibrary
                     throw new SystemException("JSON Error: Key cannot be null/empty/whitespace");
                 }
                 // Check for ":" between key and value
-                JsonRoutines.SkipWhitespace(value, ref pos);
-                if (JsonRoutines.GetToken(value, ref pos) != ":")
+                JsonRoutines.SkipWhitespace(reader);
+                if (JsonRoutines.GetToken(reader) != ":")
                 {
                     throw new SystemException($"JSON Error: Missing colon: {tempKey}");
                 }
                 // Get value
-                JsonRoutines.SkipWhitespace(value, ref pos);
-                if (value[pos] == '{') // JObject
+                JsonRoutines.SkipWhitespace(reader);
+                if (reader.Peek() == '{') // JObject
                 {
-                    JObject jo = JObject.Parse(value, ref pos);
+                    JObject jo = JObject.Parse(reader);
                     result.Add(tempKey, jo);
                 }
-                else if (value[pos] == '[') // JArray
+                else if (reader.Peek() == '[') // JArray
                 {
-                    JArray ja = JArray.Parse(value, ref pos);
+                    JArray ja = JArray.Parse(reader);
                     result.Add(tempKey, ja);
                 }
                 else
                 {
                     // Get value as a string, convert to object
-                    tempValue = JsonRoutines.GetToken(value, ref pos);
+                    tempValue = JsonRoutines.GetToken(reader);
                     result.Add(tempKey, JsonRoutines.JsonValueToObject(tempValue));
                 }
             } while (true);
