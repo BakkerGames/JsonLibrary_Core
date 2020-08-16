@@ -471,22 +471,5 @@ namespace JsonLibrary
 
         #endregion
 
-        #region Clone
-
-        public static JObject Clone(JObject jo)
-        {
-            // Purpose: Clones a JObject
-            // Author : Scott Bakker
-            // Created: 09/20/2019
-            JObject result = new JObject();
-            if (jo != null && jo._data != null)
-            {
-                result._data = new Dictionary<string, object>(jo._data);
-            }
-            return result;
-        }
-
-        #endregion
-
     }
 }

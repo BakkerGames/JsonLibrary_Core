@@ -295,21 +295,5 @@ namespace JsonLibrary
 
         #endregion
 
-        #region Clone
-
-        public static JArray Clone(JArray ja)
-        {
-            // Purpose: Clones a JArray
-            // Author : Scott Bakker
-            // Created: 09/20/2019
-            JArray result = new JArray();
-            if (ja != null && ja._data != null)
-            {
-                result._data = new List<object>(ja._data);
-            }
-            return result;
-        }
-
-        #endregion
     }
 }

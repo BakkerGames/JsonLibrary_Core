@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a set of routines to support JSON Object and JSON Array classes
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 08/11/2020
+// LastMod: 08/16/2020
 
 // --- Notes  : DateTime and DateTimeOffset are stored in JObject and JArray properly
 //              as objects of those types.
@@ -771,17 +771,12 @@ namespace JsonLibrary
             // Purpose: Determine if value converts to a Time without a Date
             // Author : Scott Bakker
             // Created: 04/06/2020
-            // LastMod: 08/11/2020
+            // LastMod: 08/16/2020
             if (value == null || value.Length == 0) return false;
             if (!value.Contains(":")) return false;
             if (value.Contains("/")) return false;
             if (value.Substring(1).Contains("-")) return false; // allowed as first char
-            // Try to convert to a timespan format
-            if (TimeSpan.TryParse(value, out TimeSpan tempValue))
-            {
-                return true;
-            }
-            return false;
+            return TimeSpan.TryParse(value, out _);
         }
 
         private static bool IsDateTimeValue(string value)
@@ -789,13 +784,9 @@ namespace JsonLibrary
             // Purpose: Determine if value converts to a DateTime
             // Author : Scott Bakker
             // Created: 02/19/2020
-            // LastMod: 08/11/2020
+            // LastMod: 08/16/2020
             if (value == null || value.Length == 0) return false;
-            if (DateTime.TryParse(value, out DateTime tempValue))
-            {
-                return true;
-            }
-            return false;
+            return DateTime.TryParse(value, out _);
         }
 
         private static bool IsDateTimeOffsetValue(string value)
@@ -803,18 +794,14 @@ namespace JsonLibrary
             // Purpose: Determine if value converts to a DateTimeOffset
             // Author : Scott Bakker
             // Created: 02/19/2020
-            // LastMod: 08/11/2020
+            // LastMod: 08/16/2020
             if (value == null || value.Length == 0) return false;
             // The "T" in the 11th position is used to indicate DateTimeOffset
             if (value.Length < 11 || value[10] != 'T')
             {
                 return false;
             }
-            if (DateTimeOffset.TryParse(value, out DateTimeOffset tempValue))
-            {
-                return true;
-            }
-            return false;
+            return DateTimeOffset.TryParse(value, out _);
         }
 
         #endregion
