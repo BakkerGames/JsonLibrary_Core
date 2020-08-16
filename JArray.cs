@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a JSON Array class
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 04/17/2020
+// LastMod: 08/11/2020
 
 // Notes  : The values in the list ARE ordered based on when they are added.
 //          The values are NOT sorted, and there can be duplicates.
@@ -18,7 +18,7 @@ namespace JsonLibrary
 {
     public class JArray : IEnumerable<object>
     {
-        private List<object> _data;
+        private readonly List<object> _data;
 
         public JArray()
         {
@@ -28,13 +28,14 @@ namespace JsonLibrary
             _data = new List<object>();
         }
 
-        public JArray(JArray ja)
+        public JArray(IEnumerable list)
         {
-            // Purpose: Create new JArray object from an existing JArray
+            // Purpose: Create new JArray from an existing list
             // Author : Scott Bakker
             // Created: 09/13/2019
+            // LastMod: 05/21/2020
             _data = new List<object>();
-            this.Append(ja);
+            Append(list);
         }
 
         public IEnumerator<object> GetEnumerator()
@@ -58,16 +59,16 @@ namespace JsonLibrary
             // Purpose: Adds a new value to the end of the JArray list
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // Changes: 10/03/2019 Removed extra string processing, was wrong
+            // LastMod: 10/03/2019
             _data.Add(value);
         }
 
         public void Append(IEnumerable list)
         {
-            // Purpose: Append all values in the sent IEnumerable at the end of the JArray list
+            // Purpose: Append all values to the end of the JArray list
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 04/06/2020
+            // LastMod: 04/21/2020
             if (list != null)
             {
                 foreach (object obj in list)
@@ -90,11 +91,12 @@ namespace JsonLibrary
             // Purpose: Give access to item values by index
             // Author : Scott Bakker
             // Created: 09/13/2019
+            // LastMod: 08/11/2020
             get
             {
                 if (index < 0 || index >= _data.Count)
                 {
-                    throw new ArgumentOutOfRangeException();
+                    throw new IndexOutOfRangeException();
                 }
                 return _data[index];
             }
@@ -102,14 +104,7 @@ namespace JsonLibrary
             {
                 if (index < 0 || index >= _data.Count)
                 {
-                    throw new ArgumentOutOfRangeException();
-                }
-                if (value != null)
-                {
-                    if (value.GetType() == string.Empty.GetType())
-                    {
-                        value = JsonRoutines.FromJsonString(value.ToString());
-                    }
+                    throw new IndexOutOfRangeException();
                 }
                 _data[index] = value;
             }
@@ -130,7 +125,7 @@ namespace JsonLibrary
             // Created: 09/13/2019
             if (index < 0 || index >= _data.Count)
             {
-                throw new ArgumentOutOfRangeException();
+                throw new IndexOutOfRangeException();
             }
             _data.RemoveAt(index);
         }
@@ -142,16 +137,17 @@ namespace JsonLibrary
             // Purpose: Convert this JArray into a string with no formatting
             // Author : Scott Bakker
             // Created: 09/13/2019
+            // LastMod: 08/11/2020
             // Notes  : This could be implemented as ToStringFormatted(-1) but
             //          it is separate to get better performance.
             StringBuilder result = new StringBuilder();
-            result.Append("[");
+            result.Append('[');
             bool addComma = false;
             foreach (object obj in _data)
             {
                 if (addComma)
                 {
-                    result.Append(",");
+                    result.Append(',');
                 }
                 else
                 {
@@ -159,7 +155,7 @@ namespace JsonLibrary
                 }
                 result.Append(JsonRoutines.ValueToString(obj));
             }
-            result.Append("]");
+            result.Append(']');
             return result.ToString();
         }
 
@@ -177,23 +173,24 @@ namespace JsonLibrary
             // Purpose: Convert this JArray into a string with formatting
             // Author : Scott Bakker
             // Created: 10/17/2019
+            // LastMod: 08/11/2020
             if (_data.Count == 0)
             {
                 return "[]"; // avoid indent errors
             }
             StringBuilder result = new StringBuilder();
-            result.Append("[");
+            result.Append('[');
             if (indentLevel >= 0)
             {
-                indentLevel++;
                 result.AppendLine();
+                indentLevel++;
             }
             bool addComma = false;
             foreach (object obj in _data)
             {
                 if (addComma)
                 {
-                    result.Append(",");
+                    result.Append(',');
                     if (indentLevel >= 0)
                     {
                         result.AppendLine();
@@ -218,7 +215,7 @@ namespace JsonLibrary
                 }
                 result.Append(JsonRoutines.IndentSpace(indentLevel));
             }
-            result.Append("]");
+            result.Append(']');
             return result.ToString();
         }
 
@@ -248,16 +245,18 @@ namespace JsonLibrary
             // Purpose: Convert a partial string into a JArray
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 04/17/2020
+            // LastMod: 08/11/2020
             if (reader == null || reader.Peek() == -1)
             {
                 return null;
             }
             JArray result = new JArray();
+            JsonRoutines.SkipBOM(reader);
             JsonRoutines.SkipWhitespace(reader);
             if (reader.Peek() != '[')
             {
-                throw new SystemException($"JSON Error: Unexpected token to start JArray: {reader.Peek()}");
+                throw new SystemException(
+                    $"JSON Error: Unexpected token to start JArray: {reader.Peek()}");
             }
             reader.Read();
             do

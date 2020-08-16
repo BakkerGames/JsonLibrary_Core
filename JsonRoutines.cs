@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a set of routines to support JSON Object and JSON Array classes
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 04/17/2020
+// LastMod: 08/11/2020
 
 // --- Notes  : DateTime and DateTimeOffset are stored in JObject and JArray properly
 //              as objects of those types.
@@ -25,15 +25,21 @@ namespace JsonLibrary
         #region constants
 
         private const string _dateFormat = "yyyy-MM-dd";
+
+        // These are unspecified time zones used for local times only
         private const string _timeFormat = "HH:mm:ss";
         private const string _timeMilliFormat = "HH:mm:ss.fff";
         private const string _dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
         private const string _dateTimeMilliFormat = "yyyy-MM-dd HH:mm:ss.fff";
 
-        // The "T" in the 11th position is used to indicate DateTimeOffset
+        // These are precise ISO 8601 format, with the "T" in the 11th position
         private const string _dateTimeOffsetFormat = "yyyy-MM-ddTHH:mm:sszzz";
         private const string _dateTimeOffsetMilliFormat = "yyyy-MM-ddTHH:mm:ss.fffffffzzz";
 
+        // TimeSpan formats are very different
+        private const string _timeSpanFormat = "c"; // [-][d'.']hh':'mm':'ss['.'fffffff]
+
+        // ToStringFormatted
         private const int _indentSpaceSize = 2;
 
         #endregion
@@ -70,6 +76,7 @@ namespace JsonLibrary
             // Purpose: Return a value in proper JSON string format
             // Author : Scott Bakker
             // Created: 09/13/2019
+            // LastMod: 08/11/2020
 
             if (value == null)
             {
@@ -83,7 +90,7 @@ namespace JsonLibrary
             if (t.IsGenericType)
             {
                 StringBuilder result = new StringBuilder();
-                result.Append("[");
+                result.Append('[');
                 if (indentLevel >= 0)
                 {
                     indentLevel++;
@@ -93,7 +100,7 @@ namespace JsonLibrary
                 {
                     if (addComma)
                     {
-                        result.Append(",");
+                        result.Append(',');
                     }
                     else
                     {
@@ -118,7 +125,7 @@ namespace JsonLibrary
                     }
                     result.Append(IndentSpace(indentLevel));
                 }
-                result.Append("]");
+                result.Append(']');
                 return result.ToString();
             }
 
@@ -131,7 +138,7 @@ namespace JsonLibrary
                 {
                     result.Append(b.ToString("x2", null));
                 }
-                result.Append("\"");
+                result.Append('\"');
                 return result.ToString();
             }
 
@@ -139,7 +146,7 @@ namespace JsonLibrary
             if (t.IsArray)
             {
                 StringBuilder result = new StringBuilder();
-                result.Append("[");
+                result.Append('[');
                 if (indentLevel >= 0)
                 {
                     indentLevel++;
@@ -149,7 +156,7 @@ namespace JsonLibrary
                 {
                     if (addComma)
                     {
-                        result.Append(",");
+                        result.Append(',');
                     }
                     else
                     {
@@ -161,7 +168,7 @@ namespace JsonLibrary
                         result.Append(IndentSpace(indentLevel));
                     }
                     object obj = ((Array)value).GetValue(i);
-                    result.Append(ValueToString(obj));
+                    result.Append(ValueToString(obj, ref indentLevel));
                 }
                 if (indentLevel >= 0)
                 {
@@ -172,7 +179,7 @@ namespace JsonLibrary
                     }
                     result.Append(IndentSpace(indentLevel));
                 }
-                result.Append("]");
+                result.Append(']');
                 return result.ToString();
             }
 
@@ -181,21 +188,21 @@ namespace JsonLibrary
             if (t == typeof(string))
             {
                 StringBuilder result = new StringBuilder();
-                result.Append("\"");
+                result.Append('\"');
                 foreach (char c in (string)value)
                 {
                     result.Append(ToJsonChar(c));
                 }
-                result.Append("\"");
+                result.Append('\"');
                 return result.ToString();
             }
 
             if (t == typeof(char))
             {
                 StringBuilder result = new StringBuilder();
-                result.Append("\"");
+                result.Append('\"');
                 result.Append(ToJsonChar((char)value));
-                result.Append("\"");
+                result.Append('\"');
                 return result.ToString();
             }
 
@@ -218,14 +225,20 @@ namespace JsonLibrary
 
             if (t == typeof(DateTimeOffset))
             {
+                string result;
                 if (((DateTimeOffset)value).Millisecond == 0)
                 {
-                    return $"\"{((DateTimeOffset)value).ToString(_dateTimeOffsetFormat, null)}\"";
+                    result = ((DateTimeOffset)value).ToString(_dateTimeOffsetFormat, null);
                 }
                 else
                 {
-                    return $"\"{((DateTimeOffset)value).ToString(_dateTimeOffsetMilliFormat, null)}\"";
+                    result = ((DateTimeOffset)value).ToString(_dateTimeOffsetMilliFormat, null);
                 }
+                if (result.EndsWith("+00:00") || result.EndsWith("-00:00"))
+                {
+                    result = $"{result.Substring(0, result.Length - 6)}Z";
+                }
+                return $"\"{result}\"";
             }
 
             if (t == typeof(DateTime))
@@ -256,6 +269,11 @@ namespace JsonLibrary
                 }
             }
 
+            if (t == typeof(TimeSpan))
+            {
+                return ((TimeSpan)value).ToString(_timeSpanFormat);
+            }
+
             if (t == typeof(JObject))
             {
                 return ((JObject)value).ToStringFormatted(ref indentLevel);
@@ -270,6 +288,9 @@ namespace JsonLibrary
                 t == typeof(double) ||
                 t == typeof(decimal))
             {
+                // Remove trailing decimal zeros. This is not necessary or part
+                // of the JSON specification, but it will be impossible to
+                // compare two JSON string representations without doing this.
                 return NormalizeDecimal(value.ToString());
             }
 
@@ -291,6 +312,10 @@ namespace JsonLibrary
 
         internal static string NormalizeDecimal(string value)
         {
+            // Purpose: Gets rid of trailing decimal zeros to normalize value
+            // Author : Scott Bakker
+            // Created: 03/19/2020
+            // LastMod: 08/11/2020
             if (value.Contains("E") || value.Contains("e"))
             {
                 // Scientific notation, leave alone
@@ -300,14 +325,20 @@ namespace JsonLibrary
             {
                 return value;
             }
+            if (value.StartsWith("."))
+            {
+                // Cover leading decimal place
+                value = "0" + value;
+            }
             return value.TrimEnd('0').TrimEnd('.');
         }
 
-        internal static string FromJsonString(string value)
+        internal static string FromSerializedString(string value)
         {
             // Purpose: Convert a string with escaped characters into control codes
             // Author : Scott Bakker
             // Created: 09/17/2019
+            // LastMod: 08/11/2020
             if (value == null)
             {
                 return null;
@@ -378,6 +409,10 @@ namespace JsonLibrary
                     result.Append(c);
                 }
             }
+            if (lastBackslash)
+            {
+                throw new SystemException("JSON Error: Unexpected trailing backslash");
+            }
             return result.ToString();
         }
 
@@ -388,7 +423,7 @@ namespace JsonLibrary
             // Created: 09/13/2019
             // LastMod: 04/17/2020
             // Notes  : Does not do escaped character expansion here, just passes exact value.
-            //        : Properly handles \" within strings properly this way, but nothing else.
+            //        : Properly handles \" within strings this way, but nothing else.
             if (reader == null || reader.Peek() == -1)
             {
                 return null;
@@ -425,7 +460,7 @@ namespace JsonLibrary
                     // Any comments end the token
                     if (c == '/')
                     {
-                        if (reader.PeekNext () == '*' || reader.PeekNext() == '/')
+                        if (reader.PeekNext() == '*' || reader.PeekNext() == '/')
                         {
                             // don't gobble char
                             break; // end token
@@ -481,6 +516,7 @@ namespace JsonLibrary
             // Purpose: Convert a string representation of a value to an actual object
             // Author : Scott Bakker
             // Created: 09/13/2019
+            // LastMod: 08/11/2020
             if (value == null || value.Length == 0)
             {
                 return null;
@@ -491,9 +527,9 @@ namespace JsonLibrary
                     value.EndsWith("\"", StringComparison.Ordinal))
                 {
                     value = value.Substring(1, value.Length - 2); // remove quotes
-                    if (IsTimeOnlyValue(value))
+                    if (IsTimeSpanValue(value))
                     {
-                        return value; // Return Time as a string
+                        return TimeSpan.Parse(value);
                     }
                     if (IsDateTimeOffsetValue(value))
                     {
@@ -504,7 +540,7 @@ namespace JsonLibrary
                         return DateTime.Parse(value);
                     }
                     // Parse all escaped sequences to chars
-                    return FromJsonString(value);
+                    return FromSerializedString(value);
                 }
                 if (value == "null")
                 {
@@ -535,7 +571,27 @@ namespace JsonLibrary
             }
             catch (Exception ex)
             {
-                throw new SystemException($"JSON Error: Value not recognized: {value}\r\n{ex.Message}");
+                throw new SystemException(
+                    $"JSON Error: Value not recognized: {value}\r\n{ex.Message}");
+            }
+        }
+
+        internal static void SkipBOM(CharReader reader)
+        {
+            // Purpose: Skip over Byte-Order Mark (BOM) at the beginning of a stream
+            // Author : Scott Bakker
+            // Created: 05/20/2020
+            // LastMod: 08/11/2020
+            // UTF-8 BOM = 0xEF,0xBB,0xBF = 239,187,191
+            if (reader.Peek() == '\xEF' && reader.PeekNext() == '\xBB')
+            {
+                reader.Read();
+                reader.Read();
+                if (reader.Peek() != '\xBF')
+                {
+                    throw new SystemException($"JSON Error: Invalid BOM character: 0x{reader.Peek():X2}");
+                }
+                reader.Read();
             }
         }
 
@@ -544,10 +600,10 @@ namespace JsonLibrary
             // Purpose: Skip over any whitespace characters or any recognized comments
             // Author : Scott Bakker
             // Created: 09/23/2019
-            // LastMod: 04/17/2020
-            // Notes  : Comments consist of /*...*/ or // to eol (aka line comment)
-            //        : An unterminated comment is not an error, it is just all skipped
-            if (reader == null || reader.Peek() == -1)
+            // LastMod: 08/11/2020
+            // Notes  : Comments consist of "/*...*/" or "//" to eol (aka line comment).
+            //        : "//" comments don't need an eol if at the end, but "/*" does need "*/".
+            if (reader == null)
             {
                 return;
             }
@@ -557,7 +613,7 @@ namespace JsonLibrary
             {
                 if (inComment)
                 {
-                    if (reader.Peek() == '*' && reader.PeekNext () == '/' ) // found ending "*/"
+                    if (reader.Peek() == '*' && reader.PeekNext() == '/') // found ending "*/"
                     {
                         inComment = false;
                         reader.Read();
@@ -594,6 +650,10 @@ namespace JsonLibrary
                     continue;
                 }
                 break;
+            }
+            if (inComment)
+            {
+                throw new SystemException("JSON Error: Comment starting with /* is not terminated by */");
             }
         }
 
@@ -649,12 +709,11 @@ namespace JsonLibrary
             // Purpose: Check for recognized whitespace characters
             // Author : Scott Bakker
             // Created: 09/13/2019
+            // LastMod: 05/21/2020
             if (c == ' ') return true;
             if (c == '\r') return true;
             if (c == '\n') return true;
             if (c == '\t') return true;
-            if (c == '\b') return true;
-            if (c == '\f') return true;
             return false;
         }
 
@@ -707,17 +766,18 @@ namespace JsonLibrary
             return false;
         }
 
-        private static bool IsTimeOnlyValue(string value)
+        private static bool IsTimeSpanValue(string value)
         {
             // Purpose: Determine if value converts to a Time without a Date
             // Author : Scott Bakker
             // Created: 04/06/2020
+            // LastMod: 08/11/2020
             if (value == null || value.Length == 0) return false;
             if (!value.Contains(":")) return false;
             if (value.Contains("/")) return false;
-            if (value.Contains("-")) return false;
-            // Try to convert using a dummy date
-            if (DateTime.TryParse($"{DateTime.MinValue:yyyy-MM-dd} {value}", out DateTime tempValue))
+            if (value.Substring(1).Contains("-")) return false; // allowed as first char
+            // Try to convert to a timespan format
+            if (TimeSpan.TryParse(value, out TimeSpan tempValue))
             {
                 return true;
             }
@@ -729,6 +789,7 @@ namespace JsonLibrary
             // Purpose: Determine if value converts to a DateTime
             // Author : Scott Bakker
             // Created: 02/19/2020
+            // LastMod: 08/11/2020
             if (value == null || value.Length == 0) return false;
             if (DateTime.TryParse(value, out DateTime tempValue))
             {
@@ -742,6 +803,7 @@ namespace JsonLibrary
             // Purpose: Determine if value converts to a DateTimeOffset
             // Author : Scott Bakker
             // Created: 02/19/2020
+            // LastMod: 08/11/2020
             if (value == null || value.Length == 0) return false;
             // The "T" in the 11th position is used to indicate DateTimeOffset
             if (value.Length < 11 || value[10] != 'T')
