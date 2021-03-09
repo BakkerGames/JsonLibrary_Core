@@ -76,7 +76,7 @@ namespace JsonLibrary
             // Purpose: Return a value in proper JSON string format
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 11/11/2020
+            // LastMod: 03/09/2021
 
             if (value == null)
             {
@@ -89,7 +89,7 @@ namespace JsonLibrary
             // Check for generic list types
             if (t.IsGenericType)
             {
-                StringBuilder result = new StringBuilder();
+                StringBuilder result = new();
                 result.Append('[');
                 if (indentLevel >= 0)
                 {
@@ -132,7 +132,7 @@ namespace JsonLibrary
             // Check for byte array, return as hex string "0x00..." with quotes
             if (t.IsArray && t == typeof(byte[]))
             {
-                StringBuilder result = new StringBuilder();
+                StringBuilder result = new();
                 result.Append("\"0x");
                 foreach (byte b in (byte[])value)
                 {
@@ -145,7 +145,7 @@ namespace JsonLibrary
             // Check for array, return in JArray format
             if (t.IsArray)
             {
-                StringBuilder result = new StringBuilder();
+                StringBuilder result = new();
                 result.Append('[');
                 if (indentLevel >= 0)
                 {
@@ -187,7 +187,7 @@ namespace JsonLibrary
 
             if (t == typeof(string))
             {
-                StringBuilder result = new StringBuilder();
+                StringBuilder result = new();
                 result.Append('\"');
                 foreach (char c in (string)value)
                 {
@@ -199,7 +199,7 @@ namespace JsonLibrary
 
             if (t == typeof(char))
             {
-                StringBuilder result = new StringBuilder();
+                StringBuilder result = new();
                 result.Append('\"');
                 result.Append(ToJsonChar((char)value));
                 result.Append('\"');
@@ -338,7 +338,7 @@ namespace JsonLibrary
             // Purpose: Convert a string with escaped characters into control codes
             // Author : Scott Bakker
             // Created: 09/17/2019
-            // LastMod: 08/11/2020
+            // LastMod: 03/09/2021
             if (value == null)
             {
                 return null;
@@ -347,7 +347,7 @@ namespace JsonLibrary
             {
                 return value;
             }
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             bool lastBackslash = false;
             int unicodeCharCount = 0;
             string unicodeValue = "";
@@ -421,7 +421,7 @@ namespace JsonLibrary
             // Purpose: Get a single token from string value for parsing
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 04/17/2020
+            // LastMod: 03/09/2021
             // Notes  : Does not do escaped character expansion here, just passes exact value.
             //        : Properly handles \" within strings this way, but nothing else.
             if (reader == null || reader.Peek() == -1)
@@ -437,7 +437,7 @@ namespace JsonLibrary
                 return ((char)reader.Read()).ToString();
             }
             // Have to build token char by char
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             bool inQuote = false;
             bool lastBackslash = false;
             do
@@ -736,6 +736,7 @@ namespace JsonLibrary
             // Purpose: Check for any valid characters in a non-string value
             // Author : Scott Bakker
             // Created: 09/23/2019
+            // LastMod: 03/09/2021
             switch (c)
             {
                 case 'n': // null
@@ -762,6 +763,8 @@ namespace JsonLibrary
                 case '.':
                 case 'E': // also 'e' checked for above
                     return true;
+                default:
+                    break;
             }
             return false;
         }

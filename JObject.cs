@@ -289,8 +289,8 @@ namespace JsonLibrary
             // Purpose: Convert a JObject into a string
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 08/11/2020
-            StringBuilder result = new StringBuilder();
+            // LastMod: 03/09/2021
+            StringBuilder result = new();
             result.Append('{');
             bool addComma = false;
             foreach (KeyValuePair<string, object> kv in _data)
@@ -316,11 +316,11 @@ namespace JsonLibrary
             // Purpose: Sort the keys before returning as a string
             // Author : Scott Bakker
             // Created: 10/17/2019
-            // LastMod: 08/11/2020
-            StringBuilder result = new StringBuilder();
+            // LastMod: 03/09/2021
+            StringBuilder result = new();
             result.Append('{');
             bool addComma = false;
-            SortedList sorted = new SortedList(_data);
+            SortedList sorted = new(_data);
             for (int i = 0; i < sorted.Count; i++)
             {
                 if (addComma)
@@ -353,12 +353,12 @@ namespace JsonLibrary
             // Purpose: Convert this JObject into a string with formatting
             // Author : Scott Bakker
             // Created: 10/17/2019
-            // LastMod: 08/11/2020
+            // LastMod: 03/09/2021
             if (_data.Count == 0)
             {
                 return "{}"; // avoid indent errors
             }
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             result.Append('{');
             if (indentLevel >= 0)
             {
@@ -431,12 +431,12 @@ namespace JsonLibrary
             // Purpose: Convert a partial string into a JObject
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 08/11/2020
+            // LastMod: 03/09/2021
             if (reader == null || reader.Peek() == -1)
             {
                 return null;
             }
-            JObject result = new JObject();
+            JObject result = new();
             JsonRoutines.SkipBOM(reader);
             JsonRoutines.SkipWhitespace(reader);
             if (reader.Peek() != '{')

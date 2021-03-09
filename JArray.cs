@@ -137,7 +137,7 @@ namespace JsonLibrary
             // Purpose: Convert this JArray into a string with no formatting
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 08/11/2020
+            // LastMod: 03/09/2021
             // Notes  : This could be implemented as ToStringFormatted(-1) but
             //          it is separate to get better performance.
             StringBuilder result = new();
@@ -173,7 +173,7 @@ namespace JsonLibrary
             // Purpose: Convert this JArray into a string with formatting
             // Author : Scott Bakker
             // Created: 10/17/2019
-            // LastMod: 08/11/2020
+            // LastMod: 03/09/2021
             if (_data.Count == 0)
             {
                 return "[]"; // avoid indent errors
@@ -245,7 +245,7 @@ namespace JsonLibrary
             // Purpose: Convert a partial string into a JArray
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 08/11/2020
+            // LastMod: 03/09/2021
             if (reader == null || reader.Peek() == -1)
             {
                 return null;
