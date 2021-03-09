@@ -1,10 +1,12 @@
 ﻿// Purpose: Provide a JSON Object class
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 08/14/2020
+// LastMod: 03/09/2021
 
 // Notes  : The keys in this JObject implementation are case sensitive, so "abc" <> "ABC".
 //        : Keys cannot be blank: null, empty, or contain only whitespace.
+//        : All other key strings are valid if allowed by the .NET String type, including
+//          strings with leading and/or trailing whitespace, which is significant.
 //        : The items in this JObject are NOT ordered in any way. Specifically, successive
 //          calls to ToString() may not return the same results.
 //        : The function ToStringSorted() may be used to return a sorted list, but will be
@@ -13,13 +15,17 @@
 //        : The function ToStringFormatted() will return a string representation with
 //          whitespace added. Two spaces are used for indenting, and CRLF between lines.
 //        : this[] allows missing keys. Get returns Nothing and Set does an Add.
+//        : A path to a specific value can be accessed using multiple key strings, as in
+//              jo["key1", "key2", "key3"] = 123
+//              value = jo["key1", "key2", "key3"]
+//          All sub-objects must be JObjects. At the first non-JObject, this path syntax
+//          cannot be used further. This is similar to "key1.key2.key3" used by some
+//          JSON implementations, but that limits key characters so isn't used here.
 //        : Literal strings in C# collapse, so "a\\b" and "a\u005Cb" are equal. If used
 //          for keys, they will create one entry. In VB.NET, they would not collapse and
 //          would not be equal, and thus would create two entries.
 //          This difference is in the calling application language, not the language of
 //          this class library, and only matters with compiled literal string values.
-//        : A path to a specific value can be accessed using multiple key strings, as in
-//              jo["key1", "key2", "key3"] = 123;
 
 using System;
 using System.Collections;
@@ -111,9 +117,13 @@ namespace JsonLibrary
             // Purpose: Give access to item values by key
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 08/14/2020
+            // LastMod: 08/17/2020
             get
             {
+                if (keys == null || keys.Length == 0)
+                {
+                    throw new ArgumentNullException(nameof(keys), JsonKeyError);
+                }
                 JObject jo = this;
                 int i;
                 // Follow the path specified in keys
@@ -147,6 +157,10 @@ namespace JsonLibrary
             }
             set
             {
+                if (keys == null || keys.Length == 0)
+                {
+                    throw new ArgumentNullException(nameof(keys), JsonKeyError);
+                }
                 JObject jo = this;
                 int i;
                 // Follow the path specified in keys
@@ -189,6 +203,25 @@ namespace JsonLibrary
             // Author : Scott Bakker
             // Created: 05/21/2020
             return new Dictionary<string, object>(_data);
+        }
+
+        public JArray GetArray(params string[] keys)
+        {
+            // Purpose: Return a JArray at a specific path
+            // Author : Scott Bakker
+            // Created: 09/16/2020
+            // LastMod: 10/30/2020
+            // Note   : This makes it easier to retrieve arrays of items
+            object result = this[keys];
+            if (result == null)
+            {
+                return null;
+            }
+            if (result.GetType() != typeof(JArray))
+            {
+                throw new ArgumentException("Type is not JArray");
+            }
+            return (JArray)result;
         }
 
         public void Merge(JObject jo)
@@ -467,6 +500,38 @@ namespace JsonLibrary
                 result[tempKey] = JsonRoutines.JsonValueToObject(tempValue);
             } while (true);
             return result;
+        }
+
+        public static bool TryParse(string value, ref JObject result)
+        {
+            // Purpose: Try to convert a string into a JObject
+            // Author : Scott Bakker
+            // Created: 10/23/2020
+            try
+            {
+                result = Parse(new CharReader(value));
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public static bool TryParse(TextReader textReader, ref JObject result)
+        {
+            // Purpose: Try to convert a TextReader stream into a JObject
+            // Author : Scott Bakker
+            // Created: 10/23/2020
+            try
+            {
+                result = Parse(new CharReader(textReader));
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         #endregion

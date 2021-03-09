@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a set of routines to support JSON Object and JSON Array classes
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 08/16/2020
+// LastMod: 03/09/2021
 
 // --- Notes  : DateTime and DateTimeOffset are stored in JObject and JArray properly
 //              as objects of those types.
@@ -76,7 +76,7 @@ namespace JsonLibrary
             // Purpose: Return a value in proper JSON string format
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 08/11/2020
+            // LastMod: 11/11/2020
 
             if (value == null)
             {
@@ -271,7 +271,7 @@ namespace JsonLibrary
 
             if (t == typeof(TimeSpan))
             {
-                return ((TimeSpan)value).ToString(_timeSpanFormat);
+                return $"\"{((TimeSpan)value).ToString(_timeSpanFormat)}\"";
             }
 
             if (t == typeof(JObject))

@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a JSON Array class
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 08/11/2020
+// LastMod: 03/09/2021
 
 // Notes  : The values in the list ARE ordered based on when they are added.
 //          The values are NOT sorted, and there can be duplicates.
@@ -140,7 +140,7 @@ namespace JsonLibrary
             // LastMod: 08/11/2020
             // Notes  : This could be implemented as ToStringFormatted(-1) but
             //          it is separate to get better performance.
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             result.Append('[');
             bool addComma = false;
             foreach (object obj in _data)
@@ -178,7 +178,7 @@ namespace JsonLibrary
             {
                 return "[]"; // avoid indent errors
             }
-            StringBuilder result = new StringBuilder();
+            StringBuilder result = new();
             result.Append('[');
             if (indentLevel >= 0)
             {
@@ -250,7 +250,7 @@ namespace JsonLibrary
             {
                 return null;
             }
-            JArray result = new JArray();
+            JArray result = new();
             JsonRoutines.SkipBOM(reader);
             JsonRoutines.SkipWhitespace(reader);
             if (reader.Peek() != '[')
@@ -291,6 +291,38 @@ namespace JsonLibrary
                 result.Add(JsonRoutines.JsonValueToObject(tempValue));
             } while (true);
             return result;
+        }
+
+        public static bool TryParse(string value, ref JArray result)
+        {
+            // Purpose: Try to convert a string into a JArray
+            // Author : Scott Bakker
+            // Created: 10/23/2020
+            try
+            {
+                result = Parse(new CharReader(value));
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public static bool TryParse(TextReader textReader, ref JArray result)
+        {
+            // Purpose: Try to convert a TextReader stream into a JArray
+            // Author : Scott Bakker
+            // Created: 10/23/2020
+            try
+            {
+                result = Parse(new CharReader(textReader));
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         #endregion
