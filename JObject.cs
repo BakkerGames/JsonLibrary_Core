@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a JSON Object class
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 03/09/2021
+// LastMod: 03/17/2021
 
 // Notes  : The keys in this JObject implementation are case sensitive, so "abc" <> "ABC".
 //        : Keys cannot be blank: null, empty, or contain only whitespace.
@@ -431,7 +431,7 @@ namespace JsonLibrary
             // Purpose: Convert a partial string into a JObject
             // Author : Scott Bakker
             // Created: 09/13/2019
-            // LastMod: 03/09/2021
+            // LastMod: 03/17/2021
             if (reader == null || reader.Peek() == -1)
             {
                 return null;
@@ -469,9 +469,9 @@ namespace JsonLibrary
                 {
                     throw new SystemException($"JSON Error: Invalid key format: {tempKey}");
                 }
-                // Convert to usable key
+                // Convert to usable key, removing quotes
                 tempKey = JsonRoutines.JsonValueToObject(tempKey).ToString();
-                if (JsonRoutines.IsWhitespaceString(tempKey.Substring(1, tempKey.Length - 2)))
+                if (JsonRoutines.IsWhitespaceString(tempKey))
                 {
                     throw new SystemException(JsonKeyError);
                 }
