@@ -149,10 +149,12 @@ namespace JsonLibrary
                 for (int r = 0; r < ((Array)value).Rank; r++)
                 {
                     result.Append('[');
-                }
-                if (indentLevel >= 0)
-                {
-                    indentLevel++;
+                    if (indentLevel >= 0 && r < ((Array)value).Rank - 1)
+                    {
+                        indentLevel++;
+                        result.AppendLine();
+                        result.Append(IndentSpace(indentLevel));
+                    }
                 }
                 bool addComma = false;
                 int[] pos = new int[((Array)value).Rank];
@@ -181,7 +183,13 @@ namespace JsonLibrary
                             break;
                         }
                         pos[r] = 0;
-                        result.Append("],[");
+                        result.Append("],");
+                        if (indentLevel >= 0)
+                        {
+                            result.AppendLine();
+                            result.Append(IndentSpace(indentLevel));
+                        }
+                        result.Append('[');
                         addComma = false;
                     }
                 }
@@ -197,10 +205,12 @@ namespace JsonLibrary
                 for (int r = 0; r < ((Array)value).Rank; r++)
                 {
                     result.Append(']');
-                }
-                if (indentLevel > 0 && ((Array)value).Rank > 1)
-                {
-                    indentLevel--;
+                    if (indentLevel > 0 && r < ((Array)value).Rank - 1)
+                    {
+                        indentLevel--;
+                        result.AppendLine();
+                        result.Append(IndentSpace(indentLevel));
+                    }
                 }
                 return result.ToString();
             }
