@@ -1,7 +1,7 @@
 ﻿// Purpose: Provide a set of routines to support JSON Object and JSON Array classes
 // Author : Scott Bakker
 // Created: 09/13/2019
-// LastMod: 03/25/2021
+// LastMod: 03/29/2021
 
 // --- Notes  : DateTime and DateTimeOffset are stored in JObject and JArray properly
 //              as objects of those types.
@@ -142,14 +142,15 @@ namespace JsonLibrary
                 return result.ToString();
             }
 
-            // Check for array, return in JArray format
+            // Check for array, return in JArray format. Handles multi-dimensional arrays.
             if (t.IsArray)
             {
                 StringBuilder result = new();
+                // opening "[" for all ranks
                 for (int r = 0; r < ((Array)value).Rank; r++)
                 {
                     result.Append('[');
-                    if (indentLevel >= 0 && r < ((Array)value).Rank - 1)
+                    if (indentLevel >= 0)
                     {
                         indentLevel++;
                         result.AppendLine();
@@ -163,15 +164,15 @@ namespace JsonLibrary
                     if (addComma)
                     {
                         result.Append(',');
+                        if (indentLevel >= 0)
+                        {
+                            result.AppendLine();
+                            result.Append(IndentSpace(indentLevel));
+                        }
                     }
                     else
                     {
                         addComma = true;
-                    }
-                    if (indentLevel >= 0 && ((Array)value).Rank == 1)
-                    {
-                        result.AppendLine();
-                        result.Append(IndentSpace(indentLevel));
                     }
                     object obj = ((Array)value).GetValue(pos);
                     result.Append(ValueToString(obj, ref indentLevel));
@@ -183,6 +184,12 @@ namespace JsonLibrary
                             break;
                         }
                         pos[r] = 0;
+                        if (indentLevel >= 0)
+                        {
+                            indentLevel--;
+                            result.AppendLine();
+                            result.Append(IndentSpace(indentLevel));
+                        }
                         result.Append("],");
                         if (indentLevel >= 0)
                         {
@@ -190,27 +197,25 @@ namespace JsonLibrary
                             result.Append(IndentSpace(indentLevel));
                         }
                         result.Append('[');
+                        if (indentLevel >= 0)
+                        {
+                            indentLevel++;
+                            result.AppendLine();
+                            result.Append(IndentSpace(indentLevel));
+                        }
                         addComma = false;
                     }
                 }
-                if (indentLevel >= 0 && ((Array)value).Rank == 1)
-                {
-                    result.AppendLine();
-                    if (indentLevel > 0)
-                    {
-                        indentLevel--;
-                    }
-                    result.Append(IndentSpace(indentLevel));
-                }
+                // closing "]" for all ranks
                 for (int r = 0; r < ((Array)value).Rank; r++)
                 {
-                    result.Append(']');
-                    if (indentLevel > 0 && r < ((Array)value).Rank - 1)
+                    if (indentLevel >= 0)
                     {
                         indentLevel--;
                         result.AppendLine();
                         result.Append(IndentSpace(indentLevel));
                     }
+                    result.Append(']');
                 }
                 return result.ToString();
             }
